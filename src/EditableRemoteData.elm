@@ -43,19 +43,12 @@ edit fn =
 
 unwrapLocalRemote : a -> (LocalRemote data -> a) -> EditableRemoteData data de ue -> a
 unwrapLocalRemote default fn =
-    RemoteData.unwrap
-        default
-        (always default)
-        (\( _, localRemote ) ->
-            fn localRemote
-        )
+    RemoteData.unwrap default (always default) (Tuple.second >> fn)
 
 
 unwrapLocal : a -> (data -> a) -> EditableRemoteData data de ue -> a
 unwrapLocal default fn =
-    unwrapLocalRemote
-        default
-        (.local >> fn)
+    unwrapLocalRemote default (.local >> fn)
 
 
 fromResult : Result error data -> EditableRemoteData data error ue
@@ -77,24 +70,12 @@ upload remoteData =
             noUpload
             (always noUpload)
             (\( uploadStatus, { local, remote } as localRemote ) ->
-                if local == remote then
+                if local == remote || UploadStatus.isUploading uploadStatus then
                     noUpload
                 else
-                    let
-                        willUpload =
-                            ( Just localRemote
-                            , Success <| ( Uploading local, localRemote )
-                            )
-                    in
-                        case uploadStatus of
-                            NotUploading ->
-                                willUpload
-
-                            Uploading data ->
-                                noUpload
-
-                            LastUploadFailed error ->
-                                willUpload
+                    ( Just localRemote
+                    , Success <| ( Uploading local, localRemote )
+                    )
             )
             remoteData
 
@@ -136,7 +117,7 @@ isSaved =
     RemoteData.unwrap
         True
         (always True)
-        (\( uploadStatus, { local, remote } ) ->
+        (\( _, { local, remote } ) ->
             local == remote
         )
 
@@ -161,14 +142,4 @@ isUploading =
     RemoteData.unwrap
         True
         (always True)
-        (\( uploadStatus, _ ) ->
-            case uploadStatus of
-                NotUploading ->
-                    False
-
-                Uploading _ ->
-                    True
-
-                LastUploadFailed _ ->
-                    False
-        )
+        (Tuple.first >> UploadStatus.isUploading)

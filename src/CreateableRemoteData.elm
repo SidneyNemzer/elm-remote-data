@@ -33,15 +33,7 @@ create data =
 
 edit : (data -> data) -> CreateableRemoteData data de ue -> CreateableRemoteData data de ue
 edit fn =
-    EditableRemoteData.edit
-        (\maybeData ->
-            case maybeData of
-                Just data ->
-                    fn data |> Just
-
-                Nothing ->
-                    Nothing
-        )
+    EditableRemoteData.edit (Maybe.map fn)
 
 
 set : data -> CreateableRemoteData data de ue -> CreateableRemoteData data de ue
