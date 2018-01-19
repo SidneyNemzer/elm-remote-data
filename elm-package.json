@@ -1,5 +1,5 @@
 {
-    "version": "1.0.0",
+    "version": "1.1.0",
     "summary": "Represent basic RemoteData, along with editable and createable data",
     "repository": "https://github.com/SidneyNemzer/elm-remote-data.git",
     "license": "MIT",
