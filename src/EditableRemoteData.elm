@@ -5,8 +5,10 @@ module EditableRemoteData
         , edit
         , unwrapLocalRemote
         , unwrapLocal
+        , maybeLocal
         , fromResult
         , upload
+        , forceUpload
         , uploaded
         , isSaved
         , isLoading
@@ -26,7 +28,7 @@ uploaded back to the server. It's really an extension of `RemoteData`.
 
 # Functions
 
-@docs edit, unwrapLocalRemote, unwrapLocal, fromResult, upload, uploaded, isSaved, isLoading, isFailed, isSuccess, isUploading
+@docs edit, unwrapLocalRemote, unwrapLocal, maybeLocal, fromResult, upload, forceUpload, uploaded, isSaved, isLoading, isFailed, isSuccess, isUploading
 
 -}
 
@@ -80,6 +82,13 @@ unwrapLocal default fn =
     unwrapLocalRemote default (.local >> fn)
 
 
+{-| Converts to a Just if the local data is availible, Nothing otherwise.
+-}
+maybeLocal : EditableRemoteData data de ue -> Maybe data
+maybeLocal =
+    unwrapLocal Nothing Just
+
+
 {-| Creates an EditableRemoteData from a Result. Designed to be used to turn an
 HTTP request result into EditableRemoteData. The data in the Result is considered
 syncronized, so the local and remote data is the same at this point.
@@ -116,6 +125,40 @@ upload remoteData =
             (always noUpload)
             (\( uploadStatus, { local, remote } as localRemote ) ->
                 if local == remote || UploadStatus.isUploading uploadStatus then
+                    noUpload
+                else
+                    ( Just localRemote
+                    , Success <| ( Uploading local, localRemote )
+                    )
+            )
+            remoteData
+
+
+{-| Very similar to `upload`, but will upload even if the remote has the same data
+as the server.
+
+*Note*: This will likely be removed in the future in favor of a way to modify
+the remote's value. In other words, you'd mark the remote as deleted (`Nothing`)
+the use a regular save.
+
+If this is successful, the data is returned as a `Just LocalRemote`. Otherwise
+`Nothing` is returned. It's up to your code to turn the `Just LocalRemote` into
+a Cmd that sends the request to the server.
+
+-}
+forceUpload :
+    EditableRemoteData data de ue
+    -> ( Maybe (LocalRemote data), EditableRemoteData data de ue )
+forceUpload remoteData =
+    let
+        noUpload =
+            ( Nothing, remoteData )
+    in
+        RemoteData.unwrap
+            noUpload
+            (always noUpload)
+            (\( uploadStatus, { local, remote } as localRemote ) ->
+                if UploadStatus.isUploading uploadStatus then
                     noUpload
                 else
                     ( Just localRemote

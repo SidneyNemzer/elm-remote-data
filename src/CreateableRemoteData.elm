@@ -7,8 +7,10 @@ module CreateableRemoteData
         , delete
         , unwrapLocalRemote
         , unwrapLocal
+        , maybeLocal
         , fromResult
         , upload
+        , forceUpload
         , uploaded
         , isSaved
         , isLoading
@@ -30,7 +32,7 @@ remotely.
 
 # Functions
 
-@docs create, edit, set, delete, unwrapLocalRemote, unwrapLocal, fromResult, upload, uploaded, isSaved, isLoading, isFailed, isSuccess, isUploading
+@docs create, edit, set, delete, unwrapLocalRemote, unwrapLocal, maybeLocal, fromResult, upload, forceUpload, uploaded, isSaved, isLoading, isFailed, isSuccess, isUploading
 
 -}
 
@@ -94,6 +96,15 @@ unwrapLocal =
     EditableRemoteData.unwrapLocal
 
 
+{-| Converts to a Just if the local data is availible, Nothing otherwise. This
+makes it impossible to distingish between, say, deleted data and loading data.
+So this should only be used in places where that won't matter.
+-}
+maybeLocal : CreateableRemoteData data de ue -> Maybe data
+maybeLocal =
+    EditableRemoteData.unwrapLocal Nothing identity
+
+
 {-| Creates a CreateableRemoteData from a Result. Designed to be used to turn an
 HTTP request result into CreateableRemoteData. The data in the Result is considered
 syncronized, so the local and remote data is the same at this point.
@@ -120,6 +131,25 @@ upload :
     -> ( Maybe (LocalRemote (Maybe data)), CreateableRemoteData data de ue )
 upload =
     EditableRemoteData.upload
+
+
+{-| Very similar to `upload`, but will upload even if the remote has the same data
+as the server.
+
+*Note*: This will likely be removed in the future in favor of a way to modify
+the remote's value. In other words, you'd mark the remote as deleted (`Nothing`)
+the use a regular save.
+
+If this is successful, the data is returned as a `Just LocalRemote`. Otherwise
+`Nothing` is returned. It's up to your code to turn the `Just LocalRemote` into
+a Cmd that sends the request to the server.
+
+-}
+forceUpload :
+    CreateableRemoteData data de ue
+    -> ( Maybe (LocalRemote (Maybe data)), CreateableRemoteData data de ue )
+forceUpload =
+    EditableRemoteData.forceUpload
 
 
 {-| Use this after an upload has completed. This will update the CreateableRemoteData

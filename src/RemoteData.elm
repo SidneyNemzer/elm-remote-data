@@ -3,6 +3,7 @@ module RemoteData
         ( RemoteData(..)
         , map
         , unwrap
+        , toMaybe
         , fromResult
         , isLoading
         , isFailed
@@ -19,7 +20,7 @@ module RemoteData
 
 # Functions
 
-@docs map, unwrap, fromResult, isLoading, isFailed, isSuccess
+@docs map, unwrap, toMaybe, fromResult, isLoading, isFailed, isSuccess
 
 -}
 
@@ -34,7 +35,7 @@ type RemoteData data error
     | Success data
 
 
-{-| Runs a function on the data if possible, otherwise returns the default
+{-| Run a function on the data if possible, otherwise returns the default
 -}
 unwrap : a -> (error -> a) -> (data -> a) -> RemoteData data error -> a
 unwrap loading failed success remoteData =
@@ -64,7 +65,14 @@ map fn remoteData =
             Success <| fn data
 
 
-{-| Creates a RemoteData from a Result. Use this to turn an HTTP request result
+{-| Convert the data to a Just, or a Nothing if the data isn't availible.
+-}
+toMaybe : RemoteData data error -> Maybe data
+toMaybe =
+    unwrap Nothing (always Nothing) Just
+
+
+{-| Create a RemoteData from a Result. Use this to turn an HTTP request result
 into RemoteData.
 -}
 fromResult : Result error data -> RemoteData data error
