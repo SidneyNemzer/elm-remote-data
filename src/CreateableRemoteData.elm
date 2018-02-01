@@ -65,8 +65,8 @@ edit fn =
 {-| Similar to `edit`, but it sets the data without caring about the previous value
 -}
 set : data -> CreateableRemoteData data de ue -> CreateableRemoteData data de ue
-set =
-    always >> edit
+set data =
+    EditableRemoteData.edit (always <| Just data)
 
 
 {-| Modify a CreateableRemoteData to show that the data no longer exists locally
