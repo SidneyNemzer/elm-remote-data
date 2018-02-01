@@ -17,6 +17,7 @@ module CreateableRemoteData
         , isFailed
         , isSuccess
         , isUploading
+        , isDeleted
         )
 
 {-| Represents data that is downloaded from a server, edited on the client, then
@@ -32,7 +33,7 @@ remotely.
 
 # Functions
 
-@docs create, edit, set, delete, unwrapLocalRemote, unwrapLocal, maybeLocal, fromResult, upload, forceUpload, uploaded, isSaved, isLoading, isFailed, isSuccess, isUploading
+@docs create, edit, set, delete, unwrapLocalRemote, unwrapLocal, maybeLocal, fromResult, upload, forceUpload, uploaded, isSaved, isLoading, isFailed, isSuccess, isUploading, isDeleted
 
 -}
 
@@ -203,3 +204,10 @@ isSuccess =
 isUploading : CreateableRemoteData date de uploadError -> Bool
 isUploading =
     EditableRemoteData.isUploading
+
+
+{-| Check if a CreateableRemoteData is locally deleted
+-}
+isDeleted : CreateableRemoteData data de ue -> Bool
+isDeleted =
+    RemoteData.unwrap False (always False) (Tuple.second >> .local >> (==) Nothing)
